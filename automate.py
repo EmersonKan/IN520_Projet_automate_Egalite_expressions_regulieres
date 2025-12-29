@@ -1,5 +1,33 @@
 import copy as cp
 from collections import deque
+import os
+
+# =============================================================================
+# CONFIGURATION IMPORTANTE : LE CHEMIN VERS GRAPHVIZ
+# =============================================================================
+# Colle ici le chemin vers le dossier 'bin' de Graphviz que tu as trouvé.
+# Garde le 'r' devant les guillemets pour éviter les erreurs de caractères spéciaux.
+GRAPHVIZ_PATH = r'C:\Program Files\Graphviz\bin' 
+
+# On ajoute ce chemin au système pour que Python le trouve
+if os.path.exists(GRAPHVIZ_PATH):
+    os.environ["PATH"] += os.pathsep + GRAPHVIZ_PATH
+else:
+    print(f"ATTENTION : Le chemin {GRAPHVIZ_PATH} n'existe pas.")
+    print("Veuillez vérifier l'installation de Graphviz ou modifier la variable GRAPHVIZ_PATH ligne 9.")
+
+# =============================================================================
+
+# Imports pour la génération de PDF et Graphes
+try:
+    from graphviz import Digraph
+    from fpdf import FPDF
+    from fpdf.enums import XPos, YPos 
+    GRAPHVIZ_AVAILABLE = True
+except ImportError:
+    GRAPHVIZ_AVAILABLE = False
+    print("ATTENTION: graphviz ou fpdf non installés. Le PDF ne sera pas généré.")
+    print("Faites: pip install graphviz fpdf2")
 
 class automate:
     """
@@ -64,6 +92,42 @@ class automate:
             self.transition[(q0, a)] = self.transition[(q0, a)] + qlist
         else:
             self.transition.update({(q0, a): qlist})
+
+    def to_graphviz(self, filename):
+        """ Génère une image de l'automate via Graphviz """
+        if not GRAPHVIZ_AVAILABLE:
+            return None
+        
+        try:
+            dot = Digraph(comment=self.name, format='png')
+            dot.attr(rankdir='LR') # De gauche à droite
+            
+            # Point invisible pour pointer vers l'état initial (0)
+            dot.node('start', style='invisible', shape='point')
+            dot.edge('start', '0')
+
+            # Création des noeuds
+            for i in range(self.n):
+                if i in self.final:
+                    dot.node(str(i), shape='doublecircle') # Etat final
+                else:
+                    dot.node(str(i), shape='circle') # Etat normal
+
+            # Création des arêtes (transitions)
+            for (src, char), dests in self.transition.items():
+                label = "ε" if char == "E" else char
+                for dest in dests:
+                    dot.edge(str(src), str(dest), label=label)
+            
+            # Rendu du fichier
+            # Graphviz ajoute automatiquement l'extension .png au nom de fichier
+            output_path = dot.render(filename, cleanup=True)
+            return output_path
+        except Exception as e:
+            print(f"\n[ERREUR] Impossible de générer l'image pour {filename}.")
+            print(f"Cause : {e}")
+            print("Vérifiez que le chemin GRAPHVIZ_PATH ligne 9 est correct.")
+            return None
     
     
 def _clone_with_offset(a, offset):
@@ -409,37 +473,118 @@ def egal(a1, a2):
     return True
 
 
+# --- FONCTIONS POUR LE PDF ---
 
-# TESTS simples
-if __name__ == "__main__":
-    print("=== Tests de base ===")
+class PDFReport(FPDF):
+    def header(self):
+        self.set_font('Helvetica', 'B', 15)
+        self.cell(0, 10, 'Rapport de Projet: Automates', border=0, new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='C')
+        self.ln(10)
+
+    def chapter_title(self, title):
+        self.set_font('Helvetica', 'B', 12)
+        self.set_fill_color(200, 220, 255)
+        self.cell(0, 6, title, border=0, new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='L', fill=True)
+        self.ln(4)
+
+    def chapter_body(self, body):
+        self.set_font('Helvetica', '', 12)
+        self.multi_cell(0, 5, body)
+        self.ln()
+
+    def add_image(self, img_path, w=100):
+        if img_path and os.path.exists(img_path):
+            self.image(img_path, w=w)
+            self.ln()
+        else:
+            self.set_text_color(255, 0, 0)
+            self.cell(0, 10, "Image introuvable (Erreur Graphviz)", border=0, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            self.set_text_color(0, 0, 0)
+
+
+def generer_rapport_pdf():
+    if not GRAPHVIZ_AVAILABLE:
+        print("Impossible de générer le PDF sans graphviz et fpdf")
+        return
+
+    pdf = PDFReport()
+    pdf.add_page()
+
+    # Création des automates de test
     a = automate("a")
     b = automate("b")
-    print("a:", a)
-    print("b:", b)
-
+    
+    # 1. Concaténation
     cat = concatenation(a, b)
-    print("\nConcatenation (a.b):")
-    print(cat)
+    cat_img = cat.to_graphviz("graph_concat")
+    
+    pdf.chapter_title("1. Test Concatenation (a.b)")
+    pdf.chapter_body(f"Automate résultant de a.b :\n{cat}")
+    pdf.add_image(cat_img)
 
+    # 2. Union
     uni = union(a, b)
-    print("\nUnion (a+b):")
-    print(uni)
+    uni_img = uni.to_graphviz("graph_union")
+    
+    pdf.chapter_title("2. Test Union (a+b)")
+    pdf.chapter_body(f"Automate résultant de a+b :\n{uni}")
+    pdf.add_image(uni_img)
 
+    # 3. Etoile
     st = etoile(a)
-    print("\nEtoile (a*):")
-    print(st)
+    st_img = st.to_graphviz("graph_star")
+    
+    pdf.chapter_title("3. Test Etoile (a*)")
+    pdf.chapter_body(f"Automate résultant de a* :\n{st}")
+    pdf.add_image(st_img)
 
-    print("\nSuppression eps sur (a.b)* (après construction):")
-    s = supression_epsilon_transitions(concatenation(a, b))
-    print(s)
+    # 4. Suppression Epsilon
+    s = supression_epsilon_transitions(cat) # (a.b) sans epsilon
+    s_img = s.to_graphviz("graph_no_eps")
+    
+    pdf.chapter_title("4. Suppression Epsilon sur a.b")
+    pdf.chapter_body(f"Automate sans epsilon :\n{s}")
+    pdf.add_image(s_img)
 
-    # test pipeline tout_faire et egal sur un exemple simple
+    # 5. Test Egalité
+    pdf.add_page()
+    pdf.chapter_title("5. Test d'Egalite")
+    
     A = tout_faire(concatenation(etoile(union(a, b)), automate("c")))   # (a+b)* . c
     B = tout_faire(union(concatenation(etoile(a), automate("c")), concatenation(etoile(b), automate("c"))))  # a*.c + b*.c
-    print("\nTout faire A:")
-    print(A)
-    print("\nTout faire B:")
-    print(B)
-    print("\nEGAL ? ->", egal(A, B))
-# --- fin du patch ---
+    
+    A_img = A.to_graphviz("graph_A")
+    B_img = B.to_graphviz("graph_B")
+    
+    resultat = egal(A, B)
+    
+    pdf.chapter_body("Comparaison de A = (a+b)*.c et B = a*.c + b*.c")
+    pdf.chapter_body("Automate A (minimisé) :")
+    pdf.add_image(A_img)
+    pdf.chapter_body("Automate B (minimisé) :")
+    pdf.add_image(B_img)
+    
+    result_text = "EGAL" if resultat else "NON EGAL"
+    if resultat:
+        pdf.set_text_color(0, 100, 0)
+    else:
+        pdf.set_text_color(150, 0, 0)
+    
+    pdf.set_font('Helvetica', 'B', 14)
+    pdf.cell(0, 10, f"RESULTAT: {result_text}", border=0, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.set_text_color(0, 0, 0)
+
+    # Sauvegarde
+    pdf.output("rapport_projet.pdf")
+    print("\n---------------------------------------------------------")
+    print("PDF généré avec succès : rapport_projet.pdf")
+    print("---------------------------------------------------------")
+    
+    # Nettoyage des fichiers temporaires (optionnel)
+    # for f in ["graph_concat.png", "graph_union.png", "graph_star.png", "graph_no_eps.png", "graph_A.png", "graph_B.png"]:
+    #    if os.path.exists(f): os.remove(f)
+
+
+if __name__ == "__main__":
+    print("=== Exécution des tests et génération du PDF ===")
+    generer_rapport_pdf()
