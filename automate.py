@@ -398,21 +398,24 @@ def minimisation(a):
                 # signature = tuple des indices des blocs atteints pour chaque lettre
                 signature = []
                 for c in a.alphabet:
-                    # récupération de la destination (on suppose deterministe => liste avec 1 élément)
-                    dest_list = a.transition.get((q, c), [q])
-                    dest = dest_list[0]
                     for i, e2 in enumerate(part):
-                        if dest in e2:
+                        if a.transition[(q, c)][0] in e2:
                             signature.append(i)
-                            break
+                # on ajoute l'état q à la clef signature calculée
                 classes.setdefault(tuple(signature), set()).add(q)
             if len(classes) > 1:
-                # s'il y a >1 signatures différentes on a séparé des états dans e
+                # s'il y a >2 signatures différentes on a séparé des états dans e
                 modif = True
                 new_part.extend(classes.values())
             else:
                 new_part.append(e)
-        part = new_part    
+        part = new_part
+    # on réordonne la partition pour que le premier sous-ensemble soit celui qui contient l'état initial
+    for i, e in enumerate(part):
+        if 0 in e:
+            part[0], part[i] = part[i], part[0]
+            break
+ 
      
     # Étape 3 : on construit le nouvel automate minimal
     mapping = {}
@@ -430,9 +433,7 @@ def minimisation(a):
         for c in a.alphabet:
             q = a.transition[(representant, c)][0]
             res.transition[(i, c)] = [mapping[q]]
-    res.alphabet = list(a.alphabet)
     return res
-    
 
 def tout_faire(a):
     a1 = supression_epsilon_transitions(a)
