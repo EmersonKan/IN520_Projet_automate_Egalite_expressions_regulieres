@@ -4,9 +4,7 @@ import os
 import shutil
 import graphviz
 
-# =============================================================================
 # CONFIGURATION GRAPHVIZ (Linux / WSL)
-# =============================================================================
 
 def check_graphviz():
     """Vérifie si Graphviz (dot) est disponible"""
@@ -386,7 +384,7 @@ def minimisation(a):
     # on retire les ensembles vides
     part = [e for e in part if e != set()]  
     
-    # Étape 2 : raffinement jusqu’à stabilité
+    # Étape 2 : raffinement jusqu'à stabilité
     modif = True
     while modif:
         modif = False
@@ -521,6 +519,7 @@ def generer_rapport_pdf():
     cat_img = cat.to_graphviz("graph_concat")
     
     pdf.chapter_title("1. Test Concatenation (a.b)")
+    pdf.chapter_body("Cette fonction onstruit un automate en reliant les états finaux du premier automate à l'état initial du second par des E-transitions.")
     pdf.chapter_body(f"Automate résultant de a.b :\n{cat}")
     pdf.add_image(cat_img)
 
@@ -529,6 +528,7 @@ def generer_rapport_pdf():
     uni_img = uni.to_graphviz("graph_union")
     
     pdf.chapter_title("2. Test Union (a+b)")
+    pdf.chapter_body("Cette fonction construit un automate en ajoutant un nouvel état initial et un nouvel état final, reliés aux automates d'origine par des E-transitions.")
     pdf.chapter_body(f"Automate résultant de a+b :\n{uni}")
     pdf.add_image(uni_img)
 
@@ -536,7 +536,9 @@ def generer_rapport_pdf():
     st = etoile(a)
     st_img = st.to_graphviz("graph_star")
     
+    pdf.add_page()
     pdf.chapter_title("3. Test Etoile (a*)")
+    pdf.chapter_body("Cette fonction construit un automate acceptant un nombre quelconque de répétitions du langage initial.")
     pdf.chapter_body(f"Automate résultant de a* :\n{st}")
     pdf.add_image(st_img)
 
@@ -544,24 +546,26 @@ def generer_rapport_pdf():
     det = determinisation(supression_epsilon_transitions(union(a,concatenation(a,b))))   # a + ab
     det_img = det.to_graphviz("graph_det")
     
-    pdf.chapter_title("3. Test Determinisation (a + ab)")
+    pdf.chapter_title("4. Test Determinisation (a + ab)")
+    pdf.chapter_body("Cette fonction transforme un automate non déterministe sans E-transitions en un automate déterministe, dont les états représentent des ensembles d'états de l'automate initial.")
     pdf.chapter_body(f"Automate résultant de a + ab :\n{det}")
     pdf.add_image(det_img)
 
 
     # 5. Completion
-    pdf.add_page()
     com = completion(determinisation(supression_epsilon_transitions(etoile(a))))  # a*
     com_img = com.to_graphviz("graph_com")
     
-    pdf.chapter_title("3. Test Completion (a*)")
+    pdf.chapter_title("5. Test Completion (a*)")
+    pdf.chapter_body("Cette fonction rend un automate déterministe complet en ajoutant un état afin que chaque transition soit définie pour toute les lettres de l'alphabet.")
     pdf.chapter_body(f"Automate résultant de a* :\n{com}")
     pdf.add_image(com_img)
-
+    
     # 6. Test Egalité
     pdf.add_page()
     pdf.chapter_title("6. Test d'Egalite")
-    
+    pdf.chapter_body("Cette fonction teste si deux automates reconnaissent le même langage en parcourant simultanément leurs états et en comparant leurs comportements d'acceptation.")
+
     A = tout_faire(concatenation(etoile(union(a, b)),c))   # (a+b)* . c
     B = tout_faire(union(concatenation(etoile(a),c), concatenation(etoile(b),c)))  # a*.c + b*.c
     
