@@ -542,7 +542,7 @@ def generer_rapport_pdf():
 
     # 4. Determinisation
     pdf.add_page()
-    det = determinisation(union(a,concatenation(a,b)))   # a + ab
+    det = determinisation(supression_epsilon_transitions(union(a,concatenation(a,b))))   # a + ab
     det_img = det.to_graphviz("graph_det")
     
     pdf.chapter_title("3. Test Determinisation a + a.b")
@@ -551,7 +551,7 @@ def generer_rapport_pdf():
 
 
     # 5. Completion
-    com = completion(etoile(a))  # a*
+    com = completion(supression_epsilon_transitions(etoile(a)))  # a*
     com_img = com.to_graphviz("graph_com")
     
     pdf.chapter_title("3. Test Completion a*")
