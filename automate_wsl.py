@@ -543,7 +543,7 @@ def generer_rapport_pdf():
     # 4. Determinisation
     pdf.add_page()
     det = determinisation(union(a,concatenation(a,b)))   # a + ab
-    det_img = det.to_graphviz("graph_star")
+    det_img = det.to_graphviz("graph_det")
     
     pdf.chapter_title("3. Test Determinisation a + a.b")
     pdf.chapter_body(f"Automate résultant de (a+b)*;c :\n{det}")
@@ -552,7 +552,7 @@ def generer_rapport_pdf():
 
     # 5. Completion
     com = completion(etoile(a))  # a*
-    com_img = com.to_graphviz("graph_star")
+    com_img = com.to_graphviz("graph_com")
     
     pdf.chapter_title("3. Test Completion a*")
     pdf.chapter_body(f"Automate résultant de a* :\n{com}")
