@@ -1,7 +1,6 @@
 import copy as cp
 from collections import deque
 import os
-import sys
 import shutil
 import graphviz
 
