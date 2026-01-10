@@ -551,7 +551,7 @@ def generer_rapport_pdf():
 
 
     # 5. Completion
-    com = completion(supression_epsilon_transitions(etoile(a)))  # a*
+    com = completion(determinisation(supression_epsilon_transitions(etoile(a))))  # a*
     com_img = com.to_graphviz("graph_com")
     
     pdf.chapter_title("3. Test Completion a*")
