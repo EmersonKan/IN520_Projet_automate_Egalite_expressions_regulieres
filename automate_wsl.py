@@ -541,20 +541,20 @@ def generer_rapport_pdf():
     pdf.add_image(st_img)
 
     # 4. Determinisation
-    pdf.add_page()
     det = determinisation(supression_epsilon_transitions(union(a,concatenation(a,b))))   # a + ab
     det_img = det.to_graphviz("graph_det")
     
-    pdf.chapter_title("3. Test Determinisation a + a.b")
-    pdf.chapter_body(f"Automate résultant de (a+b)*;c :\n{det}")
+    pdf.chapter_title("3. Test Determinisation (a + ab)")
+    pdf.chapter_body(f"Automate résultant de a + ab :\n{det}")
     pdf.add_image(det_img)
 
 
     # 5. Completion
+    pdf.add_page()
     com = completion(determinisation(supression_epsilon_transitions(etoile(a))))  # a*
     com_img = com.to_graphviz("graph_com")
     
-    pdf.chapter_title("3. Test Completion a*")
+    pdf.chapter_title("3. Test Completion (a*)")
     pdf.chapter_body(f"Automate résultant de a* :\n{com}")
     pdf.add_image(com_img)
 
@@ -562,8 +562,8 @@ def generer_rapport_pdf():
     pdf.add_page()
     pdf.chapter_title("6. Test d'Egalite")
     
-    A = tout_faire(concatenation(etoile(union(a, b)), c))   # (a+b)* . c
-    B = tout_faire(union(concatenation(etoile(a), automate("c")), concatenation(etoile(b), c)))  # a*.c + b*.c
+    A = tout_faire(concatenation(etoile(union(a, b)),c))   # (a+b)* . c
+    B = tout_faire(union(concatenation(etoile(a),c), concatenation(etoile(b),c)))  # a*.c + b*.c
     
     A_img = A.to_graphviz("graph_A")
     B_img = B.to_graphviz("graph_B")
