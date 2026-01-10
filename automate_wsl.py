@@ -540,20 +540,30 @@ def generer_rapport_pdf():
     pdf.chapter_body(f"Automate résultant de a* :\n{st}")
     pdf.add_image(st_img)
 
-    # 4. Suppression Epsilon
-    s = supression_epsilon_transitions(cat) # (a.b) sans epsilon
-    s_img = s.to_graphviz("graph_no_eps")
-    
-    pdf.chapter_title("4. Suppression Epsilon sur a.b")
-    pdf.chapter_body(f"Automate sans epsilon :\n{s}")
-    pdf.add_image(s_img)
-
-    # 5. Test Egalité
+    # 4. Determinisation
     pdf.add_page()
-    pdf.chapter_title("5. Test d'Egalite")
+    det = determinisation(union(a,concatenation(a,b)), automate("c"))   # a + ab
+    det_img = det.to_graphviz("graph_star")
     
-    A = tout_faire(concatenation(etoile(union(a, b)), automate("c")))   # (a+b)* . c
-    B = tout_faire(union(concatenation(etoile(a), automate("c")), concatenation(etoile(b), automate("c"))))  # a*.c + b*.c
+    pdf.chapter_title("3. Test Determinisation (a+b)*.c")
+    pdf.chapter_body(f"Automate résultant de (a+b)*;c :\n{det}")
+    pdf.add_image(det_img)
+
+
+    # 5. Completion
+    com = completion(etoile(a), automate("d"))  # a*
+    com_img = com.to_graphviz("graph_star")
+    
+    pdf.chapter_title("3. Test Completion (a+b)*.c")
+    pdf.chapter_body(f"Automate résultant de (a+b)*;c :\n{com}")
+    pdf.add_image(com_img)
+
+    # 6. Test Egalité
+    pdf.add_page()
+    pdf.chapter_title("6. Test d'Egalite")
+    
+    A = tout_faire(concatenation(etoile(union(a, b)), automate("e")))   # (a+b)* . c
+    B = tout_faire(union(concatenation(etoile(a), automate("e")), concatenation(etoile(b), automate("e"))))  # a*.c + b*.c
     
     A_img = A.to_graphviz("graph_A")
     B_img = B.to_graphviz("graph_B")
