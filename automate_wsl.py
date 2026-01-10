@@ -508,6 +508,7 @@ def generer_rapport_pdf():
 
     pdf = PDFReport()
     pdf.add_page()
+    pdf.chapter_title("Test des fonctions:")
 
     # Création des automates de test
     a = automate("a")
